@@ -1,15 +1,24 @@
 import { StatusBar } from 'expo-status-bar';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import TransactionScreen from './screens/transaction';
+import SearchScreen from './screens/search';
+import { createAppContainer } from 'react-navigation';
+import { createMaterialTopTabNavigator, createBottomTabNavigator } from 'react-navigation-tabs';
 
-export default function App() {
-  return (
-    <View style={styles.container}>
-      <Text>Open up App.js to start working on your app!</Text>
-      <StatusBar style="auto" />
-    </View>
-  );
+export default class App extends React.Component{
+  render(){
+   return(
+    <AppContainer/>
+   );
+  }
 }
+
+var tabNavigator = createBottomTabNavigator({
+  TransactionScreen:TransactionScreen,
+  SearchScreen:SearchScreen
+});
+var AppContainer = createAppContainer(tabNavigator);
 
 const styles = StyleSheet.create({
   container: {
@@ -19,3 +28,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
 });
+
