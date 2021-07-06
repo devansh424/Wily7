@@ -1,8 +1,10 @@
 import * as React from "react";
-import { View, Text, TouchableOpacity, TextInput, StyleSheet } from "react-native";
+import { View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from "react-native";
 import { Header } from "react-native-elements";
 import * as Permissions from "expo-permissions";
 import { BarCodeScanner } from "expo-barcode-scanner";
+import db from '../Config';
+import firebase from 'firebase';
 
 export default class TransactionScreen extends React.Component{
     constructor(){
@@ -13,6 +15,7 @@ export default class TransactionScreen extends React.Component{
             scanned:false,
             scannedBookID:"",
             scannedStudentID:"",
+            transactionMessage:null,
         }
     }
 
@@ -24,6 +27,84 @@ export default class TransactionScreen extends React.Component{
             scanned:false,
         });
     }
+
+  /*  getBook = async ()=>{
+        db.collection("books").doc("bsc001").get().then((document)=>{
+            console.log(document.data());
+        });
+    }
+
+    componentDidMount(){
+        this.getBook();
+    } */
+
+    handleTransaction = async ()=>{
+        var transactionMessage
+        
+        db.collection("books").doc(this.state.scannedBookID).get().then((doc)=>{
+            var book = doc.data();
+            if(book.bookAvailable){
+                this.initiateBookIssue();
+                transactionMessage="bookIssued";
+            }else{
+                this.initiateBookReturn();
+                transactionMessage="bookRetuned";
+            }
+        });
+        this.setState({
+            transactionMessage:transactionMessage,
+        });
+        
+    }
+
+        initiateBookIssue = async ()=>{
+            db.collection("transactions").add({
+                bookID:this.state.scannedBookID,
+                studentID:this.state.scannedStudentID,
+                transactionType:"issued",
+                date:firebase.firestore.Timestamp.now().toDate(),
+            });
+
+            db.collection("books").doc(this.state.scannedBookID).update({
+                bookAvailable:false
+            });
+
+            db.collection("students").doc(this.state.scannedStudentID).update({
+                bookIssued:firebase.firestore.FieldValue.increment(1)
+            });
+
+            Alert.alert("book Issued");
+
+            this.setState({
+                scannedBookID:"",
+                scannedStudentID:""
+            });
+        }
+
+        
+        initiateBookReturn = async ()=>{
+            db.collection("transactions").add({
+                bookID:this.state.scannedBookID,
+                studentID:this.state.scannedStudentID,
+                transactionType:"return",
+                date:firebase.firestore.Timestamp.now().toDate(),
+            });
+
+            db.collection("books").doc(this.state.scannedBookID).update({
+                bookAvailable:true
+            });
+
+            db.collection("students").doc(this.state.scannedStudentID).update({
+                bookIssued:firebase.firestore.FieldValue.increment(-1)
+            });
+
+            Alert.alert("book Returned");
+
+            this.setState({
+                scannedBookID:"",
+                scannedStudentID:""
+            });
+        }
 
     handleBarCodeScanner = async ({type,data})=>{
         if(this.state.buttonState==="BookID"){
@@ -74,6 +155,15 @@ export default class TransactionScreen extends React.Component{
                             <Text>Scan</Text>
                         </TouchableOpacity>
                     </View>
+
+                    
+                    <TouchableOpacity onPress={()=>{
+                            this.handleTransaction();
+                        }} 
+                        style={styles.button}>
+                            <Text>Submit</Text>
+                    </TouchableOpacity>
+
                 </View>
             );
         }
