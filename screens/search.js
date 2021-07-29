@@ -6,7 +6,9 @@ export default class SearchScreen extends React.Component{
     constructor(){
         super();
         this.state={
-            allTransction:[]
+            allTransction:[],
+            lastVisibleTransaction:null,
+            searchWord:""
         }
     }
 
@@ -14,7 +16,19 @@ export default class SearchScreen extends React.Component{
         db.collection("transactions").limit(10).get().then((query)=>{
             query.docs.map((response)=>{
                 this.setState({
-                    allTransction:[...this.state.allTransction,response.data()]
+                    allTransction:[...this.state.allTransction,response.data()],
+                    lastVisibleTransaction: response
+                });
+            });
+        });
+    }
+
+    fetchMoreTransactions = async ()=>{
+        db.collection("transactions").startAfter(this.state.lastVisibleTransaction).limit(10).get().then((query)=>{
+            query.docs.map((response)=>{
+                this.setState({
+                    allTransction:[...this.state.allTransction,response.data()],
+                    lastVisibleTransaction: response
                 });
             });
         });
@@ -50,9 +64,9 @@ export default class SearchScreen extends React.Component{
                                 {"transaction type : "+item.transactionType}
                             </Text>
                         </View>
-                        
-                       
                     )}
+                    onEndReached={this.fetchMoreTransactions}
+                    onEndReachedThreshold={0.7}
                 /> 
                 
             </View>
